@@ -1,7 +1,7 @@
 <template>
     <div class="classify">
        <!-- <Division></Division> -->
-        <div class="left-menu" v-for="(item,index) in getData" :key="index">
+        <!-- <div class="left-menu" v-for="(item,index) in getData" :key="index">
             <h5>第一事业部</h5>
             <el-row class="tac">
               <el-col :span="12">
@@ -29,7 +29,7 @@
         </div>
         <div class="right-content">
 
-        </div>
+        </div> -->
     </div>
 </template>
 <script>

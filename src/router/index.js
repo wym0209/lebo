@@ -25,24 +25,6 @@ const router=new Router({
           component: () => import('@/views/organization/first-division/first-division'),
           meta: { title: '第一事业部'},
           hidden: true
-        },{
-          path: '/secondDivision',
-          name: 'secondDivision',
-          component: () => import('@/views/organization/second-division/second-division'),
-          meta: { title: '第二事业部'},
-          hidden: true
-        },{
-          path: '/salesroom',
-          name: 'salesroom',
-          component: () => import('@/views/organization/salesroom/salesroom'),
-          meta: { title: '门店'},
-          hidden: true
-        },{
-          path: '/research',
-          name: 'research',
-          component: () => import('@/views/organization/research/research'),
-          meta: { title: '门店'},
-          hidden: true
         }]
       }]
     },
@@ -51,7 +33,51 @@ const router=new Router({
       component: () => import('@/views/404'),
       hidden: true
     },
-  
+    //乐播平台注册
+    {
+      path: '/register',
+      component: () => import('@/views/Register/register'),
+      hidden:true
+    },
+    //权限组
+    {
+      path: '/',
+      component: Layout,
+      redirect: '/PermissionGroup',
+      children: [{
+      path: 'PermissionGroup',
+      name: 'PermissionGroup',
+      component: () => import('@/views/PermissionGroup/index'),
+        meta: { title: '权限组'}
+      }]
+    },
+     //权限管理
+    {
+      path: '/',
+      component: Layout,
+      redirect: '/PermissionManager',
+      children: [{
+        path: 'PermissionManager',
+        name: 'PermissionManager',
+        component: () => import('@/views/PermissionManager/index'),
+        meta: {
+          title: '权限'
+        }
+      }]
+    },
+    {
+      path: '/',
+      component: Layout,
+      redirect: '/power',
+      children: [{
+        path: 'power',
+        name: 'power',
+        component: () => import('@/views/power/power'),
+        meta: {
+          title: '权限'
+        }
+      }]
+    },
     // 404 page must be placed at the end !!!
     { path: '*', redirect: '/404', hidden: true }
   ]

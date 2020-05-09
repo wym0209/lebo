@@ -4,7 +4,8 @@
         <div class="left">
           <div class="search">
             <span><i class="el-icon-search"></i></span>
-            <input type="text" placeholder="搜索">
+            <input type="text" placeholder="搜索" @keyup.enter="searchEnterFun">
+            <p><i class="el-icon-circle-close" style="float:right"></i></p>
           </div>
           <div class="menu">
             <el-row class="tac">
@@ -38,9 +39,9 @@
                     <i class="el-icon-s-tools"></i>
                   </span>
                   <el-dropdown-menu slot="dropdown" class="select">
-                    <el-dropdown-item>黄金糕</el-dropdown-item>
-                    <el-dropdown-item>狮子头</el-dropdown-item>
-                    <el-dropdown-item>螺蛳粉</el-dropdown-item>
+                    <el-dropdown-item><el-button type="text" @click="openCreate()">创建部门</el-button></el-dropdown-item>
+                    <el-dropdown-item><el-button type="text" @click="openEdit()">编辑部门</el-button></el-dropdown-item>
+                    <el-dropdown-item><el-button type="text" @click="open">删除部门</el-button></el-dropdown-item>
                   </el-dropdown-menu>
               </el-dropdown>
             </template>
@@ -50,16 +51,53 @@
         
         <div class="right">
           <!-- <router-view></router-view> -->
-          <Division :TwoList="TwoList" :id="changeTwoListId"></Division>
+          <Division :TwoList="TwoList[changeTwoListId]" :rightHeader="rightHeader" :changeTwoListId="changeTwoListId" :tableList="tableList"></Division>
+          <!-- <Division :TwoList="TwoList" :id="changeTwoListId"></Division> -->
         </div>
-
       </div>
-    
+      <!-- //创建部门 -->
+    <el-dialog :visible.sync="dialogFormVisible" width="38%" center title="创建部门">
+          <el-form :model="form" :rules="rules">
+            <!-- <h5>创建部门</h5> -->
+            <el-form-item prop='named'>
+              <span>名称</span>
+              <el-input v-model="form.name" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item prop='role'>
+              <span>角色</span>
+              <el-select v-model="form.region" placeholder="可搜索角色">
+                <el-option v-for="(item,index) in roleArr" :label="item.rolename" :value="item.id" :key="index"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-form>
+          <div slot="footer" class="dialog-footer">
+            <el-button type="primary" @click="createDepartment()">确 定</el-button>
+          </div>
+    </el-dialog>
+    <!-- 编辑部门 -->
+     <el-dialog :visible.sync="edit" width="38%" center title="编辑部门">
+          <el-form :model="form">
+            <!-- <h5>创建部门</h5> -->
+            <el-form-item>
+              <span>名称</span>
+              <el-input v-model="form.name" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item>
+              <span>角色</span>
+              <el-select v-model="form.region" placeholder="可搜索角色">
+                  <el-option v-for="(item,index) in editRole" :label="item.rolename" :value="item.id" v-show="item.rolename != '全部'" :key="index"></el-option>
+              </el-select>
+            </el-form-item>
+          </el-form>
+          <div slot="footer" class="dialog-footer">
+            <el-button type="primary" @click="submitForm('ruleForm')">确 定</el-button>
+          </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import {divisionList} from '@/api/index';
+import {AJuDeps,AJuDepC,staffList,create,ARoLi,AJuDepCDe} from '@/api/index';
 import Division from "@/components/division";
 export default {
   name: 'navigation',
@@ -75,6 +113,10 @@ export default {
        activeClass: 0,
        active:'active',
        status:'0',
+       nickname:'',
+       tableList: [],
+       roleArr:[],
+       editRole:[],
        options: [{
           value: '选项1',
           label: '黄金糕'
@@ -94,8 +136,32 @@ export default {
         FirstList:[],
         TwoList:[],
         changeTwoListId: 0,
+        rightHeader: "",
+        dialogFormVisible: false,
+        edit:false,
+        form: {
+          name: '',
+          region: '',
+          date1: '',
+          date2: '',
+          delivery: false,
+          type: [],
+          resource: '',
+          desc: ''
+        },
+         rules:{
+        named:[{required: true, message: '请输入名称', trigger: 'blur'}],
+        role :[{required: true, message: '请选择类型', trigger: 'blur'}]
+      }
+        
     }
   },
+    created(){
+      this.getRole()
+    },
+    mounted(){
+      this.getData()
+    },
    methods: {
       handleOpen(key, keyPath) {
         console.log(key, keyPath);
@@ -109,41 +175,195 @@ export default {
         }else{
           this.show=true
         }
-        
+      },
+      getData(){
+        AJuDeps().then(res=>{
+          this.FirstList=res.data.data.FirstList;
+          this.TwoList=res.data.data.TwoList;
+          this.changeTwoListId=res.data.data.FirstList[0].id;
+          this.rightHeader = res.data.data.FirstList[0].depname
+          staffList({   
+            dep_id:this.changeTwoListId
+          }).then(res=>{
+            this.tableList = res.data.data
+          })
+          console.log(this.tableList)
+      })
       },
       //选择添加创建、编辑、删除部门
-      select(){
-
-      },
       IsActive(index) {
         this.activeClass = index;
         this.changeTwoListId = this.FirstList[index].id
-        console.log(this.changeTwoListId)
-        this.$router.replace({
-          name: "firstDivision", // 这里通过name来引入router
-          path: "/firstDivision",
-          // query: {
-          //   status:index+1
-          // }
+        this.rightHeader = this.FirstList[index].depname
+        // this.$router.replace({
+        //   name: "firstDivision", // 这里通过name来引入router
+        //   path: "/firstDivision",
+        //   // query: {
+        //   //   status:this.changeTwoListId
+        //   // }
+        // });
+        this.addDivision()
+      },
+      //创建部门
+    createDepartment(){
+      if(this.changeTwoListId){
+        console.log('id',this.changeTwoListId)
+        this.changeTwoListId = 0;
+      }
+      this.dialogFormVisible = false;
+      create({
+        dep_id: this.changeTwoListId,
+        depname: this.form.name,
+        role_id: this.form.region,
+      }).then(res=>{
+        this.getData()
+        this.form = {
+          name: "",
+          region: "",
+          date1: "",
+          date2: "",
+          delivery: false,
+          type: [],
+          resource: "",
+          desc: ""
+        }
+      })
+    },
+    //编辑部门
+     editDepartment(){
+      if(!this.changeId){
+        this.changeId = this.TwoList[0].id;
+      }
+      this.edit = false;
+      AJuDepCUp({
+        dep_id: this.changeId,
+        depname: this.form.name,
+        role_id: this.form.region,
+      }).then(res=>{
+         this.form = {
+          name: "",
+          region: "",
+          date1: "",
+          date2: "",
+          delivery: false,
+          type: [],
+          resource: "",
+          desc: ""
+        }
+      })
+    },
+    //删除部门
+    deleteDepartment(){
+      AJuDepCDe({
+        dep_id: this.changeTwoListId
+      }).then(res=>{
+        this.getData()
+      })
+    },
+    //确认是否删除部门
+    open() {
+        this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.deleteDepartment()
+          this.$message({
+            type: 'success',
+            message: '删除成功!'
+          });
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });
         });
+      },
+    addDivision(){
+      staffList({   
+        dep_id:this.changeTwoListId
+      }).then(res=>{
+        this.tableList = res.data.data
+      })
+    },
+     //获取创建部门角色
+    openCreate(){
+      this.dialogFormVisible=true;
+      AJuDepC({
+        dep_id:0
+      }).then(res=>{
+        this.roleArr=res.data.data;
+      })
+    },
+    //获取编辑部门角色
+    openEdit(){
+      this.edit=true;
+      AJuDepC({
+        dep_id:this.parentId
+      }).then(res=>{
+        console.log('res',res)
+        this.editRole=res.data.data;
+      })
+    },
+      //提交
+    submitForm(formName) {
+      
+    },
+    //搜索
+    searchEnterFun(e){
+      var keyCode = window.event? e.keyCode:e.which;
+      var val = e.target.value;
+      console.log('回车搜索',keyCode,e);
+      if(keyCode == 13 && val){
+            staffList({
+              dep_id:this.changeTwoListId,
+              nickname:val
+            }).then(res => {
+              this.tableList = res.data.data
+              console.log("www", this.tableData);
+            });
       }
     },
-  mounted(){
-    divisionList().then(res=>{
-        this.FirstList=res.data.data.FirstList;
-        this.TwoList=res.data.data.TwoList;
-        this.changeTwoListId=res.data.data.FirstList[0].id;
-    })
+    //角色列表
+    getRole(){
+      ARoLi().then(res=>{
+        if(res.data.code==0){
+          this.roleArr=res.data.data;
+        }
+      })
+    }
   }
 }
 </script>
 <style lang="scss" scoped>
 *{
-  margin:0;
-  padding:0;
   list-style: none;
   text-decoration: none;
 }
+:focus {
+  outline:0;
+}
+.el-button--text {
+  color:#606266;
+}
+// .el-dropdown-menu{
+//   li:hover{
+//     background: #ecf5ff;
+//     .el-button--text{
+//         color: #409EFF;
+//     }
+//   }
+// }
+
+.el-dropdown-menu{
+  li:nth-of-type(1) button{
+      color:#096DD9;
+    }
+  li:nth-of-type(3) button{
+    color:#F56C6C;
+  }
+}
+
 .organization-container{
   width:100%;
   height: 100%;
@@ -179,6 +399,11 @@ export default {
           outline: none;
           padding-left:30px;
           border:1px solid #E5E5E5;
+        }
+        p{
+          position:absolute;
+          right:20px;
+          top:14px;
         }
 
       }
@@ -245,6 +470,20 @@ export default {
     
     
   }
+  //弹框表格居中
+.el-form{
+  width:300px;
+  margin:0 auto;
+  .el-input{
+    width:240px;
+  }
+  span{
+    margin-right:12px;
+  }
+}
+.el-select{
+  width:240px;
+}
 }
 
     

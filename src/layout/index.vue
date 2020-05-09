@@ -10,11 +10,6 @@ export default {
     name:"Layout",
     components:{
         HeadBar
-    }
-        
-    
+    } 
 }
 </script>
-<style lang="scss" scoped>
-
-</style>
